@@ -1,44 +1,48 @@
 "use client";
 
-import { useState } from 'react';
+import { useAddSupplierMutation, useDeleteSupplierMutation, useGetSuppliersQuery, useUpdateSupplierMutation } from '@/app/services/suppliers';
+import { useUploadMutation } from '@/app/services/upload';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 interface Supplier {
-  id: number;
+  _id: string;
   name: string;
   description: string;
-  image: string;
+  icon: string;
 }
 
-const initialSuppliers: Supplier[] = [
-  {
-    id: 1,
-    name: "Tech Solutions Inc",
-    description: "Leading technology equipment supplier with over 20 years of experience",
-    image: "https://images.pexels.com/photos/276452/pexels-photo-276452.jpeg?auto=compress&cs=tinysrgb&w=300&h=200&fit=crop"
-  },
-  {
-    id: 2,
-    name: "Green Energy Co",
-    description: "Sustainable energy solutions and renewable technology provider",
-    image: "https://images.pexels.com/photos/433308/pexels-photo-433308.jpeg?auto=compress&cs=tinysrgb&w=300&h=200&fit=crop"
-  },
-  {
-    id: 3,
-    name: "Office Supplies Plus",
-    description: "Complete office supply chain with nationwide delivery service",
-    image: "https://images.pexels.com/photos/159888/pexels-photo-159888.jpeg?auto=compress&cs=tinysrgb&w=300&h=200&fit=crop"
-  }
-];
-
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
+  const [image, setImage] = useState<File>();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    image: ''
+    icon: ''
   });
+
+  const [upload] = useUploadMutation();
+  const [addSupplier] = useAddSupplierMutation();
+  const [updateSupplier] = useUpdateSupplierMutation();
+  const [deleteSupplier] = useDeleteSupplierMutation();
+  
+  // Add refetch and proper cache management
+  const { data: suppliersList, refetch } = useGetSuppliersQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+
+  console.log('suppliers', suppliersList);
+
+  useEffect(() => {
+    if (suppliersList) {
+      setSuppliers(suppliersList);
+    }
+  }, [suppliersList]);
 
   const openModal = (supplier?: Supplier) => {
     if (supplier) {
@@ -46,46 +50,90 @@ export default function SuppliersPage() {
       setFormData({
         name: supplier.name,
         description: supplier.description,
-        image: supplier.image
+        icon: supplier.icon
       });
     } else {
       setEditingSupplier(null);
-      setFormData({ name: '', description: '', image: '' });
+      setFormData({ name: '', description: '', icon: '' });
     }
+    setImage(undefined);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingSupplier(null);
-    setFormData({ name: '', description: '', image: '' });
+    setFormData({ name: '', description: '', icon: '' });
+    setImage(undefined);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const openDeleteModal = (supplier: Supplier) => {
+    setSupplierToDelete(supplier);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSupplierToDelete(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingSupplier) {
-      // Update existing supplier
-      setSuppliers(suppliers.map(supplier => 
-        supplier.id === editingSupplier.id 
-          ? { ...supplier, ...formData }
-          : supplier
-      ));
-    } else {
-      // Add new supplier
-      const newSupplier: Supplier = {
-        id: Math.max(...suppliers.map(s => s.id), 0) + 1,
-        ...formData
+    setIsLoading(true);
+
+    try {
+      let imageUrl: any = formData.icon; // Keep existing image if no new one uploaded
+
+      // Upload new image if provided
+      if (image) {
+        const fd = new FormData();
+        fd.append('file', image);
+        const uploadResult = await upload(fd);
+        imageUrl = uploadResult?.data?.secure_url || imageUrl;
+      }
+
+      const supplierData = {
+        name: formData.name,
+        description: formData.description,
+        icon: imageUrl
       };
-      setSuppliers([...suppliers, newSupplier]);
+
+      if (editingSupplier) {
+        // Update existing supplier
+        await updateSupplier({
+          id: editingSupplier._id,
+          data: supplierData
+        }).unwrap();
+        toast.success('Supplier updated successfully!');
+      } else {
+        // Add new supplier
+        await addSupplier(supplierData).unwrap();
+        toast.success('Supplier added successfully!');
+      }
+
+      // Refetch data to update the UI
+      refetch();
+      closeModal();
+    } catch (error) {
+      console.error('Error saving supplier:', error);
+      toast.error('Failed to save supplier. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    closeModal();
   };
 
-  const deleteSupplier = (id: number) => {
-    if (confirm('Are you sure you want to delete this supplier?')) {
-      setSuppliers(suppliers.filter(supplier => supplier.id !== id));
+  const handleDelete = async () => {
+    if (!supplierToDelete) return;
+
+    try {
+      await deleteSupplier(supplierToDelete._id).unwrap();
+      toast.success('Supplier deleted successfully!');
+      // Refetch data to update the UI
+      refetch();
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+      toast.error('Failed to delete supplier. Please try again.');
     }
   };
 
@@ -107,9 +155,9 @@ export default function SuppliersPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
           {suppliers.map((supplier) => (
-            <div key={supplier.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <div key={supplier._id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               <img
-                src={supplier.image}
+                src={supplier.icon}
                 alt={supplier.name}
                 className="w-full h-48 object-cover"
               />
@@ -124,7 +172,7 @@ export default function SuppliersPage() {
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteSupplier(supplier.id)}
+                    onClick={() => openDeleteModal(supplier)}
                     className="flex-1 px-3 py-2 text-sm font-medium text-red-600 border border-red-600 rounded-md hover:bg-red-50 transition-colors"
                   >
                     Delete
@@ -154,7 +202,7 @@ export default function SuppliersPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
@@ -206,17 +254,30 @@ export default function SuppliersPage() {
                 
                 <div>
                   <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
+                    Image {editingSupplier && "(leave empty to keep current image)"}
                   </label>
                   <input
-                    type="url"
+                    type="file"
+                    accept="image/*"
                     id="image"
-                    required
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImage(file);
+                        setFormData({ ...formData, icon: URL.createObjectURL(file) });
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="https://example.com/image.jpg"
                   />
+                  {formData.icon && (
+                    <div className="mt-2">
+                      <img 
+                        src={formData.icon} 
+                        alt="Preview" 
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex space-x-3 pt-4">
@@ -229,12 +290,55 @@ export default function SuppliersPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 transition-colors"
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
                   >
-                    {editingSupplier ? 'Update' : 'Create'}
+                    {isLoading ? (
+                      <svg className="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx={12} cy={12} r={10} stroke="currentColor" strokeWidth={4} />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      editingSupplier ? 'Update' : 'Create'
+                    )}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && supplierToDelete && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              
+              <h3 className="text-lg font-medium text-gray-900 text-center mb-2">Delete Supplier</h3>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                Are you sure you want to delete <span className="font-medium">{supplierToDelete.name}</span>? This action cannot be undone.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeDeleteModal}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>

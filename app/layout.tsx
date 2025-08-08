@@ -21,7 +21,6 @@ export default function RootLayout({
     <html lang="en">
       
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
           {/* Navigation */}
           {/* <nav className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,15 +57,15 @@ export default function RootLayout({
           </nav> */}
 
           {/* Main content */}
-          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
+
+
               <RTKQyProvider>
                 <ToastContainer position="top-right" autoClose={3000} />
               {children}
                   </RTKQyProvider>
-            </div>
-          </main>
-        </div>
+
+
+
       </body>
 
     </html>

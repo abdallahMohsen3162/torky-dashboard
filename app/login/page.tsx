@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 import { toast } from "react-toastify";
 import { useLoginMutation } from "../services/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   // Simulating the mutation hook for demo purposes
@@ -20,7 +21,7 @@ export default function LoginPage() {
   };
 
   const [login, { isLoading, isError, error }] = useLoginMutation();
-
+  const router = useRouter();
   const handleLogin = async () => {
     setMessage("");
 
@@ -28,7 +29,8 @@ export default function LoginPage() {
       await login(formData);
       setMessage("✅ تم تسجيل الدخول بنجاح!");
       localStorage.setItem("temp", "true");
-      window.location.href = "/";
+      toast.success("تم تسجيل الدخول بنجاح!");
+      router.push("/hello"); // Redirect to hello page
     } catch (err) {
       console.error("Login failed:", err);
       if (isError) {
