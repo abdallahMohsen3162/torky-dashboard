@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 import { toast } from "react-toastify";
+import { useLoginMutation } from "../services/auth";
 
 export default function LoginPage() {
   // Simulating the mutation hook for demo purposes
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,29 +19,22 @@ export default function LoginPage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const [login, { isLoading, isError, error }] = useLoginMutation();
+
   const handleLogin = async () => {
     setMessage("");
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      try {
-        // Mock successful login
-        if (formData.email && formData.password) {
-          // localStorage.setItem("token", "mock-token"); // Commented out as per restrictions
-          setMessage("✅ تم تسجيل الدخول بنجاح!");
-          toast.success("تم تسجيل الدخول بنجاح!");
-          window.location.href = "/"; // Redirect to home page
-        } else {
-          throw new Error("Invalid credentials");
-        }
-      } catch (err) {
-        console.error("Login failed:", err);
+
+    try {
+      await login(formData);
+      setMessage("✅ تم تسجيل الدخول بنجاح!");
+      localStorage.setItem("temp", "true");
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Login failed:", err);
+      if (isError) {
         setMessage("❌ بريد إلكتروني أو كلمة مرور غير صحيحة");
-      } finally {
-        setIsLoading(false);
       }
-    }, 1500);
+    } 
   };
 
   return (

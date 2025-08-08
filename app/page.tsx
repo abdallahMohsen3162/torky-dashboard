@@ -1,5 +1,15 @@
+"use client";
+
+import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("temp")) {
+      toast.success("تم تسجيل الدخول بنجاح!");
+      localStorage.removeItem("temp"); // Clear the temporary token
+    }
+  }, []);
   return (
     <div className="space-y-6">
       <div className="bg-white overflow-hidden shadow rounded-lg">
