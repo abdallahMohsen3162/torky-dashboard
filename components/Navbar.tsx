@@ -25,7 +25,7 @@ export function Navbar() {
   };
   
   useEffect(() => {
-    if(!profile && !isLoading && !isError) {
+    if(!profile && !isLoading && isError) {
       window.location.href = '/login'; // Redirect to login if no profile
 
     }
