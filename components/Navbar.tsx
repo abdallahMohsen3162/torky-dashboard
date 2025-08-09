@@ -1,13 +1,14 @@
 "use client";
 
+import { useGetMyProfileQuery } from "@/app/services/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const {data:profile, isLoading, isError} = useGetMyProfileQuery();
   // Helper function to determine if link is active
   const isActiveLink = (href: string) => {
     if (href === '/' && pathname === '/') return true;
@@ -22,13 +23,21 @@ export function Navbar() {
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
+  
+  useEffect(() => {
+    if(!profile && !isLoading && !isError) {
+      window.location.href = '/login'; // Redirect to login if no profile
+
+    }
+    
+  }, [profile, isLoading, isError]);
 
   return (
     <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
               <Link 
                 href="/" 
                 className="text-2xl font-bold text-gray-900 hover:text-gray-700 transition-colors duration-200"
@@ -37,10 +46,10 @@ export function Navbar() {
                 Dashboard
               </Link>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
               <Link
                 href="/"
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center h-16 ${
                   isActiveLink('/')
                     ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -50,7 +59,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/users"
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center h-16 ${
                   isActiveLink('/users')
                     ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -60,13 +69,23 @@ export function Navbar() {
               </Link>
               <Link
                 href="/suppliers"
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center h-16 ${
                   isActiveLink('/suppliers')
                     ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 Suppliers
+              </Link>
+              <Link
+                href="/profile"
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center h-16 ${
+                  isActiveLink('/profile')
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Profile
               </Link>
             </div>
           </div>
@@ -133,6 +152,17 @@ export function Navbar() {
               onClick={closeMobileMenu}
             >
               Suppliers
+            </Link>
+            <Link
+              href="/profile"
+              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-all duration-200 ${
+                isActiveLink('/profile')
+                  ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+              }`}
+              onClick={closeMobileMenu}
+            >
+              Profile
             </Link>
           </div>
         </div>

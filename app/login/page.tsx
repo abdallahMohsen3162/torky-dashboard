@@ -26,7 +26,10 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      await login(formData);
+      const res =await login(formData);
+      console.log(res);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       setMessage("✅ تم تسجيل الدخول بنجاح!");
       localStorage.setItem("temp", "true");
       toast.success("تم تسجيل الدخول بنجاح!");

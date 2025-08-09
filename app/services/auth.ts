@@ -15,7 +15,30 @@ export const authApi = createApi({
         body: credentials,
       }),
     }),
+
+    getMyProfile: builder.query<any, void>({
+      query: () => ({
+        url: "/auth/profile",
+        method: "GET",  
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      }),
+    }),
+
+    updateProfile: builder.mutation<any, any>({
+      query: (profileData) => ({
+        url: "/auth/profile",
+        method: "PATCH",
+        body: profileData,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      }),
+    }),
+
+    
   }),
 });
 
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useGetMyProfileQuery, useUpdateProfileMutation } = authApi;
