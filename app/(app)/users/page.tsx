@@ -2,6 +2,9 @@
 
 import { useGetAllUsersQuery } from "@/app/services/auth";
 import { useGetDistributorsQuery } from "@/app/services/distributors";
+import GoogleMapEmbed from "@/components/Map";
+import GoogleMapComponent from "@/components/Map";
+import LocationMap from "@/components/Map";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -95,12 +98,24 @@ const DistributorPopup = ({ userId, isOpen, onClose }: { userId: string, isOpen:
                   <span className="font-medium text-gray-700">الوصف:</span>
                   <span className="ml-2 text-gray-900">{distributorData.description}</span>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-700">الموقع:</span>
-                  <span className="ml-2 text-gray-900">
-                    خط العرض: {distributorData.latitude}, خط الطول: {distributorData.longitude}
-                  </span>
-                </div>
+            <div>
+              <span className="font-medium text-gray-700">الموقع:</span>
+              <span className="ml-2 text-gray-900">
+                <a
+                  href={`https://www.google.com/maps?q=${distributorData.latitude},${distributorData.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  <GoogleMapEmbed
+                  latitude={25.276987}
+                  longitude={55.296249}
+                />
+                  خط العرض: {distributorData.latitude}, خط الطول: {distributorData.longitude}
+                </a>
+              </span>
+            </div>
+
                 <div>
                   <span className="font-medium text-gray-700">تاريخ الإنشاء:</span>
                   <span className="ml-2 text-gray-900">
