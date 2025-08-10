@@ -37,8 +37,19 @@ export const authApi = createApi({
       }),
     }),
 
+      getAllUsers: builder.query<any, any>({
+        query: ({page, limit}: any) => ({
+          url: `/auth?limit=${limit}&page=${page}`,
+          method: "GET",
+        }),
+      }),
+
     
   }),
 });
 
-export const { useLoginMutation, useGetMyProfileQuery, useUpdateProfileMutation } = authApi;
+export const { useLoginMutation, 
+  useGetMyProfileQuery, 
+  useUpdateProfileMutation,
+  useGetAllUsersQuery
+ } = authApi;
