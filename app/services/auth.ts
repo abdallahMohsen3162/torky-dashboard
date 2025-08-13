@@ -44,6 +44,12 @@ export const authApi = createApi({
         }),
       }),
 
+      getUsersAnalyses: builder.query<any, void>({
+        query: () => ({
+          url: `/auth/analyses`,
+          method: "GET",
+        }),
+      }),
     
   }),
 });
@@ -51,5 +57,6 @@ export const authApi = createApi({
 export const { useLoginMutation, 
   useGetMyProfileQuery, 
   useUpdateProfileMutation,
-  useGetAllUsersQuery
+  useGetAllUsersQuery,
+  useGetUsersAnalysesQuery
  } = authApi;

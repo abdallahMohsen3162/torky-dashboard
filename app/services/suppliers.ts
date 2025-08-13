@@ -43,6 +43,10 @@ export const suppliersApi = createApi({
       }),
       invalidatesTags: ['Supplier'],
     }),
+
+    suppliersAnalyses: builder.query<any, void>({
+      query: () => `/suppliers/analyses`,
+    }),
   }),
 });
 
@@ -50,5 +54,6 @@ export const {
   useGetSuppliersQuery,
   useAddSupplierMutation,
   useUpdateSupplierMutation,
-  useDeleteSupplierMutation
+  useDeleteSupplierMutation,
+  useSuppliersAnalysesQuery
 } = suppliersApi;

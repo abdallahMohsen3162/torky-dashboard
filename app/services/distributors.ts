@@ -11,10 +11,15 @@ export const distributorsApi = createApi({
     getDistributors: builder.query<any, any>({
       query: ({id}) => `/distributors/${id}`,
     }),
+
+    distributorsAnalyses: builder.query<any, void>({
+      query: () => "/distributors/analyses",
+    }),
     
   }),
 });
 
 export const { 
-  useGetDistributorsQuery
+  useGetDistributorsQuery,
+  useDistributorsAnalysesQuery
  } = distributorsApi;

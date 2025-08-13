@@ -1,22 +1,151 @@
 "use client";
 
-import { useEffect } from "react";
+import { useGetUsersAnalysesQuery } from "@/app/services/auth";
+import { useDistributorsAnalysesQuery } from "@/app/services/distributors";
+import { useSuppliersAnalysesQuery } from "@/app/services/suppliers";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { 
+  Users, 
+  Truck, 
+  Building2, 
+  Package, 
+  Loader2,
+  CheckCircle,
+  Banknote,
+  Home,
+  FileText
+} from "lucide-react";
 
-export default function Home() {
+interface RoleCount {
+  count: number;
+  role: string;
+}
 
+export default function Page() {
+  const [roleCounts, setRoleCounts] = useState<RoleCount[]>([]);
+  const [suppliersCount, setSuppliersCount] = useState<number>(0);
+  const [distributorsCount, setDistributorsCount] = useState<number>(0);
+  
+  const { data: usersAnal, isLoading: usersLoading, error: usersError } = useGetUsersAnalysesQuery();
+  const { data: suppliersAnal, isLoading: suppliersLoading, error: suppliersError } = useSuppliersAnalysesQuery();
+  const { data: distributorsAnal, isLoading: distributorsLoading, error: distributorsError } = useDistributorsAnalysesQuery();
+  
+  useEffect(() => {
+    if (usersAnal) {
+      console.log(usersAnal);
+      setRoleCounts(usersAnal);
+    }
+  }, [usersAnal]);
+
+  useEffect(() => {
+    if (suppliersAnal && typeof suppliersAnal === 'number') {
+      setSuppliersCount(suppliersAnal);
+    } else if (suppliersAnal?.count) {
+      setSuppliersCount(suppliersAnal.count);
+    }
+  }, [suppliersAnal]);
+
+  useEffect(() => {
+    if (distributorsAnal && typeof distributorsAnal === 'number') {
+      setDistributorsCount(distributorsAnal);
+    } else if (distributorsAnal?.count) {
+      setDistributorsCount(distributorsAnal.count);
+    }
+  }, [distributorsAnal]);
+
+  // Show error messages
+  useEffect(() => {
+    if (usersError) {
+      toast.error("Failed to load users data");
+    }
+    if (suppliersError) {
+      toast.error("Failed to load suppliers data");
+    }
+    if (distributorsError) {
+      toast.error("Failed to load distributors data");
+    }
+  }, [usersError, suppliersError, distributorsError]);
+
+  // Calculate total users from role counts
+  const totalUsers = roleCounts?.reduce((sum, roleCount) => sum + roleCount.count, 0);
+  
+  const isAnyLoading = usersLoading || suppliersLoading || distributorsLoading;
+
+  const LoadingSpinner = () => (
+    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+  );
+
+  const StatCard = ({ 
+    title, 
+    value, 
+    icon: Icon, 
+    bgColor, 
+    isLoading 
+  }: { 
+    title: string; 
+    value: number; 
+    icon: any; 
+    bgColor: string; 
+    isLoading: boolean;
+  }) => (
+    <div className="bg-white overflow-hidden shadow rounded-lg">
+      <div className="p-5">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <div className={`w-8 h-8 ${bgColor} rounded-md flex items-center justify-center`}>
+              {isLoading ? (
+                <LoadingSpinner />
+              ) : (
+                <Icon className="w-5 h-5 text-white" />
+              )}
+            </div>
+          </div>
+          <div className="ml-5 w-0 flex-1">
+            <dl>
+              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
+              <dd className="text-lg font-medium text-gray-900">
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <LoadingSpinner />
+                    <span className="ml-2">Loading...</span>
+                  </div>
+                ) : (
+                  value || 0
+                )}
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
   return (
     <div className="space-y-6">
+      {/* Loading overlay for the entire dashboard */}
+      {isAnyLoading && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <LoadingSpinner />
+            <span className="ml-2 text-blue-700">Loading dashboard data...</span>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white overflow-hidden shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Welcome to Dashboard</h1>
           <p className="text-gray-600 mb-8">
-            Manage your users and suppliers from this central dashboard.
+            Manage your users, suppliers, and distributors from this central dashboard.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-              <h2 className="text-xl font-semibold text-blue-900 mb-2">Users</h2>
+              <div className="flex items-center mb-2">
+                <Users className="w-6 h-6 text-blue-600 mr-2" />
+                <h2 className="text-xl font-semibold text-blue-900">Users</h2>
+              </div>
               <p className="text-blue-700 mb-4">View and manage user accounts</p>
               <a
                 href="/users"
@@ -27,7 +156,10 @@ export default function Home() {
             </div>
             
             <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-              <h2 className="text-xl font-semibold text-green-900 mb-2">Suppliers</h2>
+              <div className="flex items-center mb-2">
+                <Building2 className="w-6 h-6 text-green-600 mr-2" />
+                <h2 className="text-xl font-semibold text-green-900">Suppliers</h2>
+              </div>
               <p className="text-green-700 mb-4">Manage supplier information and relationships</p>
               <a
                 href="/suppliers"
@@ -36,71 +168,111 @@ export default function Home() {
                 Manage Suppliers
               </a>
             </div>
+
+            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+              <div className="flex items-center mb-2">
+                <Truck className="w-6 h-6 text-purple-600 mr-2" />
+                <h2 className="text-xl font-semibold text-purple-900">Distributors</h2>
+              </div>
+              <p className="text-purple-700 mb-4">Manage distributor network and partnerships</p>
+              <a
+                href="/distributors"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+              >
+                View Distributors
+              </a>
+            </div>
           </div>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                  <dd className="text-lg font-medium text-gray-900">125</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Users"
+          value={totalUsers}
+          icon={Users}
+          bgColor="bg-indigo-500"
+          isLoading={usersLoading}
+        />
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Active Suppliers</dt>
-                  <dd className="text-lg font-medium text-gray-900">23</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Active Suppliers"
+          value={suppliersCount}
+          icon={Building2}
+          bgColor="bg-green-500"
+          isLoading={suppliersLoading}
+        />
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Pending Orders</dt>
-                  <dd className="text-lg font-medium text-gray-900">8</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Active Distributors"
+          value={distributorsCount}
+          icon={Truck}
+          bgColor="bg-purple-500"
+          isLoading={distributorsLoading}
+        />
+
+        <StatCard
+          title="Pending Orders"
+          value={8}
+          icon={Package}
+          bgColor="bg-yellow-500"
+          isLoading={false}
+        />
       </div>
+
+      {/* Role breakdown section */}
+      {roleCounts?.length > 0 && (
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center mb-4">
+              <CheckCircle className="w-5 h-5 text-gray-600 mr-2" />
+              <h2 className="text-lg font-semibold text-gray-900">User Role Breakdown</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {roleCounts.map((roleCount, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 text-gray-500 mr-2" />
+                      <span className="text-sm font-medium text-gray-600 capitalize">
+                        {roleCount.role}
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
+                      {roleCount.count}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Show loading state for role breakdown */}
+      {usersLoading && (
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center mb-4">
+              <LoadingSpinner />
+              <h2 className="text-lg font-semibold text-gray-900 ml-2">Loading User Role Breakdown...</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-gray-50 p-4 rounded-lg border border-gray-200 animate-pulse">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-gray-300 rounded mr-2"></div>
+                      <div className="w-16 h-4 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="w-8 h-6 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
